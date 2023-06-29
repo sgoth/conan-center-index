@@ -14,6 +14,7 @@ patches:
     - patch_file: patches/1.9.234-0002-disable-sort-links.patch
     - patch_file: patches/1.9.100-0002-aws-plugin-conf.patch
     - patch_file: patches/1.8.130-0004-improve-pulseaudio-detection.patch
+    - patch_file: patches/1.9.234-0003-disable-dangling-ref-error.patch
   "1.9.100":
     - patch_file: patches/1.9.100-0001-disable-sort-links.patch
     - patch_file: patches/1.9.100-0002-aws-plugin-conf.patch
