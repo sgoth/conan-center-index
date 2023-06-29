@@ -1,0 +1,16 @@
+diff --git cmake/compiler_settings.cmake cmake/compiler_settings.cmake
+index cae5b92248..d7ac702b3b 100644
+--- cmake/compiler_settings.cmake
++++ cmake/compiler_settings.cmake
+@@ -54,6 +54,11 @@ endmacro()
+ 
+ macro(set_gcc_warnings)
+     list(APPEND AWS_COMPILER_WARNINGS "-Wall" "-Werror" "-pedantic" "-Wextra")
++
++    if (COMPILER_GCC)
++      list(APPEND AWS_COMPILER_WARNINGS "-Wno-error=dangling-reference")
++    endif()
++
+     if(COMPILER_CLANG)
+         if(PLATFORM_ANDROID)
+             # when using clang with libc and API lower than 21 we need to include Android support headers and ignore the gnu-include-next warning.
