@@ -1,11 +1,42 @@
 --- a/Makefile	2022-12-01 12:42:03.053193511 +0100
-+++ b/Makefile	2022-12-01 12:45:31.777033969 +0100
-@@ -77,7 +77,7 @@
- 	$(CXX) $(CXXFLAGS) -std=c++17 -flto -O3 -c src/crypto/*.cpp
++++ b/Makefile	2022-12-08 14:19:48.541815487 +0100
+@@ -1,6 +1,6 @@
+ # By default we use LTO, but Windows does not support it
+ ifneq ($(WITH_LTO),0)
+-	override CFLAGS += -flto
++	# override CFLAGS += -flto
+ endif
+ 
+ # WITH_BORINGSSL=1 enables BoringSSL support, linked statically (preferred over OpenSSL)
+@@ -57,7 +57,7 @@
+ 	override LDFLAGS += -pthread -lz -lm uSockets.a lsquic/src/liblsquic/liblsquic.a
+ else
+ 	override CFLAGS += -std=c11 -Isrc
+-	override LDFLAGS += uSockets.a
++	override LDFLAGS += libuSockets.a
+ endif
+ 
+ # By default we build the uSockets.a static library
+@@ -66,18 +66,18 @@
+ 	$(CC) $(CFLAGS) -O3 -c src/*.c src/eventing/*.c src/crypto/*.c
+ # Also link in Boost Asio support
+ ifeq ($(WITH_ASIO),1)
+-	$(CXX) $(CXXFLAGS) -Isrc -std=c++14 -flto -O3 -c src/eventing/asio.cpp
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Isrc -std=c++14 -O3 -c src/eventing/asio.cpp
+ endif
+ 
+ # For now we do rely on C++17 for OpenSSL support but we will be porting this work to C11
+ ifeq ($(WITH_OPENSSL),1)
+-	$(CXX) $(CXXFLAGS) -std=c++17 -flto -O3 -c src/crypto/*.cpp
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -std=c++17 -O3 -c src/crypto/*.cpp
+ endif
+ ifeq ($(WITH_BORINGSSL),1)
+-	$(CXX) $(CXXFLAGS) -std=c++17 -flto -O3 -c src/crypto/*.cpp
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -std=c++17 -O3 -c src/crypto/*.cpp
  endif
  # Create a static library (try windows, then unix)
 -	lib.exe /out:uSockets.a *.o || $(AR) rvs uSockets.a *.o
-+	lib.exe /out:uSockets.a *.o || $(AR) rvs libuSockets.a *.o
++	lib.exe /out:uSockets.a *.o || $(AR) rvs libuSockets.a *.o; $(AR) -s libuSockets.a
  
  # BoringSSL needs cmake and golang
  .PHONY: boringssl
