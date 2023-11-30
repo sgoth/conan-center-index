@@ -51,9 +51,9 @@ class AwsCS3(ConanFile):
             self.requires("aws-c-http/0.6.13")
             self.requires("aws-c-io/0.10.20", transitive_headers=True)
         elif Version(self.version) < "0.3.24":
-            self.requires("aws-c-auth/0.6.11", transitive_headers=True)
-            self.requires("aws-c-http/0.6.13")
-            self.requires("aws-c-io/0.10.20", transitive_headers=True)
+            self.requires("aws-c-auth/0.6.17", transitive_headers=True)
+            self.requires("aws-c-http/0.6.22")
+            self.requires("aws-c-io/0.13.4", transitive_headers=True)
         else:
             self.requires("aws-c-auth/0.7.7", transitive_headers=True)
             self.requires("aws-c-http/0.7.14")
