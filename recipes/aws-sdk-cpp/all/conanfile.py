@@ -341,14 +341,14 @@ class AwsSdkCppConan(ConanFile):
         cmake_layout(self, src_folder="src")
 
     def requirements(self):
-        self.requires("aws-c-common/0.8.2")
-        self.requires("aws-c-event-stream/0.2.7")
-        self.requires("aws-checksums/0.1.13")
+        self.requires("aws-c-common/0.9.12")
+        self.requires("aws-c-event-stream/0.3.1")
+        self.requires("aws-checksums/0.1.17")
         if self._use_aws_crt_cpp:
-            self.requires("aws-c-cal/0.5.13")
-            self.requires("aws-c-http/0.6.13")
-            self.requires("aws-c-io/0.10.20")
-            self.requires("aws-crt-cpp/0.17.23", transitive_headers=True)
+            self.requires("aws-c-cal/0.6.1")
+            self.requires("aws-c-http/0.7.14")
+            self.requires("aws-c-io/0.13.32")
+            self.requires("aws-crt-cpp/0.24.7", transitive_headers=True)
         if self.settings.os != "Windows":
             self.requires("openssl/[>=1.1 <4]")
             self.requires("libcurl/[>=7.78.0 <9]")
@@ -429,10 +429,11 @@ class AwsSdkCppConan(ConanFile):
     def _patch_sources(self):
         apply_conandata_patches(self)
         # Disable warnings as errors
-        replace_in_file(
-            self, os.path.join(self.source_folder, "cmake", "compiler_settings.cmake"),
-            'list(APPEND AWS_COMPILER_WARNINGS "-Wall" "-Werror" "-pedantic" "-Wextra")', "",
-        )
+        if Version(self.version) < "1.11.179":
+            replace_in_file(
+                self, os.path.join(self.source_folder, "cmake", "compiler_settings.cmake"),
+                'list(APPEND AWS_COMPILER_WARNINGS "-Wall" "-Werror" "-pedantic" "-Wextra")', "",
+            )
 
     def build(self):
         self._patch_sources()
@@ -445,16 +446,22 @@ class AwsSdkCppConan(ConanFile):
         return "res"
 
     def _create_project_cmake_module(self):
-        # package files needed to build other components (e.g. aws-cdi-sdk) with this SDK
-        for file in [
+        files = [
             "cmake/compiler_settings.cmake",
             "cmake/initialize_project_version.cmake",
             "cmake/utilities.cmake",
-            "cmake/sdk_plugin_conf.cmake",
-            "toolchains/cmakeProjectConfig.cmake",
-            "toolchains/pkg-config.pc.in",
-            "aws-cpp-sdk-core/include/aws/core/VersionConfig.h"
-        ]:
+        ]
+
+        if Version(self.version) < "1.11.179":
+            files.append([
+                "cmake/sdk_plugin_conf.cmake",
+                "toolchains/cmakeProjectConfig.cmake",
+                "toolchains/pkg-config.pc.in",
+                "aws-cpp-sdk-core/include/aws/core/VersionConfig.h"
+            ])
+
+        # package files needed to build other components (e.g. aws-cdi-sdk) with this SDK
+        for file in files:
             copy(self, file, src=self.source_folder, dst=os.path.join(self.package_folder, self._res_folder))
             replace_in_file(
                 self, os.path.join(self.package_folder, self._res_folder, file),
@@ -462,13 +469,14 @@ class AwsSdkCppConan(ConanFile):
                 strict=False,
             )
 
-        # avoid getting error from hook
-        rename(self, os.path.join(self.package_folder, self._res_folder, "toolchains", "cmakeProjectConfig.cmake"),
-                     os.path.join(self.package_folder, self._res_folder, "toolchains", "cmakeProjectConf.cmake"))
-        replace_in_file(
-            self, os.path.join(self.package_folder, self._res_folder, "cmake", "utilities.cmake"),
-            "cmakeProjectConfig.cmake", "cmakeProjectConf.cmake",
-        )
+        if Version(self.version) < "1.11.179":
+            # avoid getting error from hook
+            rename(self, os.path.join(self.package_folder, self._res_folder, "toolchains", "cmakeProjectConfig.cmake"),
+                         os.path.join(self.package_folder, self._res_folder, "toolchains", "cmakeProjectConf.cmake"))
+            replace_in_file(
+                self, os.path.join(self.package_folder, self._res_folder, "cmake", "utilities.cmake"),
+                "cmakeProjectConfig.cmake", "cmakeProjectConf.cmake",
+            )
 
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
@@ -486,8 +494,12 @@ class AwsSdkCppConan(ConanFile):
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "AWSSDK")
 
-        sdk_plugin_conf = os.path.join(self._res_folder, "cmake", "sdk_plugin_conf.cmake")
-        self.cpp_info.set_property("cmake_build_modules", [sdk_plugin_conf])
+        if Version(self.version) < "1.11.179":
+            sdk_plugin_conf = os.path.join(self._res_folder, "cmake", "sdk_plugin_conf.cmake")
+        # else:
+        #     sdk_plugin_conf = os.path.join(self._res_folder, "cmake")
+        #
+            self.cpp_info.set_property("cmake_build_modules", [sdk_plugin_conf])
 
         # core component
         self.cpp_info.components["core"].set_property("cmake_target_name", "AWS::aws-sdk-cpp-core")
@@ -568,5 +580,6 @@ class AwsSdkCppConan(ConanFile):
         self.cpp_info.names["cmake_find_package_multi"] = "AWS"
         self.cpp_info.components["core"].names["cmake_find_package"] = "aws-sdk-cpp-core"
         self.cpp_info.components["core"].names["cmake_find_package_multi"] = "aws-sdk-cpp-core"
-        self.cpp_info.components["plugin_scripts"].build_modules["cmake_find_package"] = [sdk_plugin_conf]
-        self.cpp_info.components["plugin_scripts"].build_modules["cmake_find_package_multi"] = [sdk_plugin_conf]
+        if Version(self.version) < "1.11.179":
+            self.cpp_info.components["plugin_scripts"].build_modules["cmake_find_package"] = [sdk_plugin_conf]
+            self.cpp_info.components["plugin_scripts"].build_modules["cmake_find_package_multi"] = [sdk_plugin_conf]
